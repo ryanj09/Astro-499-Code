@@ -7,6 +7,7 @@ from glob import glob
 from scipy.interpolate import interp1d
 from astropy.time import Time
 import pyspeckit as psk
+import seaborn as sb
 
 from rv_utils import label_lines
 import seaborn as sb
@@ -234,16 +235,22 @@ def get_fit_pars(pars, fitpar='SHIFT0', line=6562):
         errs.append(sp.specfit.parinfo[fitpar].error)
     
     return np.array(vals), np.array(errs)
-
-    
+#Student, Ryan Jackim, edit: function to plot the data to make sure the data was being read in correctly.
+#def plot_parst(pars,df,fitpars=['WIDTH0'])
+#   
+#    for fp in fitpars:
+#        w = None
+#        vals = None
+#        errs = None
+#        w = df['parname'] == fp
+#        vals = df.loc[w, 'value'].values
+#        errs = df.loc[w, 'err'].values
+#    plt.plot(vals,errs)
 # rough TASC t0.  accretion disk is at compact object
 t0 = 57695.256711278445
 period=0.06633813731
 def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     period = period, t0 = t0, phased=False, fit_period=False):
-
-    import seaborn as sb
-    sb.set_style('ticks')
 
     c = 2.99792458E5 #km/s
 
@@ -283,7 +290,8 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
         plt.errorbar(x, 
             (vals-fit_pars[line]['center'])/fit_pars[line]['center']*c,
             errs/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
-
+#Found the problem, fit_pars[line]['center'] has a value of 6000 roughly to fit with Shift0. 
+#Need to change these so that they fit the average of the amplitude0 and width0.
     plt.xlabel(xtit)
     plt.ylabel('Velocity (km/s)')
 
