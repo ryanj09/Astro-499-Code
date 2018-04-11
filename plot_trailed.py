@@ -286,21 +286,20 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
         vals = df.loc[w, 'value'].values
         errs = df.loc[w, 'err'].values
 # adjust this section for each shift0 shift1 and amplitude. SHIFT0 only
-        if fitpars == ['SHIFT0']:
+        if any(filter(lambda x: x.startswith('SHIFT'),fitpars)):
             plt.errorbar(x,
                 (vals-fit_pars[line]['center'])/fit_pars[line]['center']*c,
                 errs/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
             plt.xlabel(xtit)
             plt.ylabel('Velocity (km/s)')
-        elif fitpars == ['AMPLITUDE0']:
+        elif any(filter(lambda x: x.startswith('AMPLITUDE'),fitpars)):
             plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
             plt.xlabel(xtit)
             plt.ylabel('Valueplaceholder')
-        elif fitpars == ['WIDTH0']:
+        elif any(filter(lambda x: x.startswith('WIDTH'),fitpars)):
             plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
             plt.xlabel(xtit)
             plt.ylabel('Angstroms')
-#Need to fix the else to an elif for each of the different types of amp and width. 
 #Need to change the shitf0 to include all shifts and amps.
 
 
