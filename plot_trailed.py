@@ -237,7 +237,6 @@ def get_fit_pars(pars, fitpar='SHIFT0', line=6562):
     return np.array(vals), np.array(errs)
 #Student, Ryan Jackim, edit: function to plot the data to make sure the data was being read in correctly.
 #def plot_parst(pars,df,fitpars=['WIDTH0'])
-#   
 #    for fp in fitpars:
 #        w = None
 #        vals = None
@@ -287,13 +286,19 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
         vals = df.loc[w, 'value'].values
         errs = df.loc[w, 'err'].values
 # adjust this section for each shift0 shift1 and amplitude. SHIFT0 only
-        plt.errorbar(x, 
-            (vals-fit_pars[line]['center'])/fit_pars[line]['center']*c,
-            errs/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
-#Found the problem, fit_pars[line]['center'] has a value of 6000 roughly to fit with Shift0. 
-#Need to change these so that they fit the average of the amplitude0 and width0.
-    plt.xlabel(xtit)
-    plt.ylabel('Velocity (km/s)')
+        if fitpars == ['SHIFT0']:
+            plt.errorbar(x,
+                (vals-fit_pars[line]['center'])/fit_pars[line]['center']*c,
+                errs/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
+            plt.xlabel(xtit)
+            plt.ylabel('Velocity (km/s)')
+        else:
+            plt.errorbar(x, vals)
+            plt.xlabel(xtit)
+            plt.ylabel('Velocity (km/s)')
+#Need to fix the else to an elif for each of the different types of amp and width. 
+#Need to change the shitf0 to include all shifts and amps.
+
 
     sb.despine()
     
