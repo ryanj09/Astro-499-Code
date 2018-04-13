@@ -136,8 +136,8 @@ def fit_two_gauss(sp,line=6562, i=0):
         guesses=[1e-16,line,3.5,5e-17,line,10],
         limits=[(2.5E-17,0), (line-25,line+25), (1.5,7), 
                 (2.5E-17,0), (line-25,line+25), (4,20)],
-        limited=[(T,F), (T,T), (T,T), 
-                 (F,F), (T,T), (T,T)], renormalize=False)
+        limited=[(T,F), (F,F), (F,F), 
+                 (F,F), (F,F), (F,F)], renormalize=False, debug = True, verbose = True)
     sp.specfit.plot_components(add_baseline=True)
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
@@ -168,8 +168,8 @@ def fit_gauss(sp,line=6562, i=0):
     T,F = True,False
     sp.specfit(fittype='gaussian',
         guesses=[1e-16,line,3.5],
-        limits=[(0,0), (line-25,line+25), (1.5,7)],
-        limited=[(F,F), (T,T), (T,T)]) 
+        limits=[(0,0), (line-25,line+25), (1.5,10)],
+        limited=[(F,F), (T,T), (T,T)], debug = True, verbose = True) 
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
     fitstr = fitstr[1:-1]
@@ -295,7 +295,7 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
         elif any(filter(lambda x: x.startswith('AMPLITUDE'),fitpars)):
             plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
             plt.xlabel(xtit)
-            plt.ylabel('Valueplaceholder')
+            plt.ylabel('erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$')
         elif any(filter(lambda x: x.startswith('WIDTH'),fitpars)):
             plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
             plt.xlabel(xtit)
