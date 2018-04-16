@@ -236,12 +236,15 @@ def get_fit_pars(pars, fitpar='SHIFT0', line=6562):
     
     return np.array(vals), np.array(errs)
 #Student, Ryan Jackim, edit: function to plot the data to make sure the data was being read in correctly.
-#def plot_parst(pars,df,fitpars=['WIDTH0'])
+#def plot_parst(pars,df,fitpars=['WIDTH0']):
+
 #    for fp in fitpars:
 #        w = None
 #        vals = None
 #        errs = None
 #        w = df['parname'] == fp
+#        wp = filter(lambda x: x.startswith('SHIFT'),fitpars)
+#        wp
 #        vals = df.loc[w, 'value'].values
 #        errs = df.loc[w, 'err'].values
 #    plt.plot(vals,errs)
@@ -270,7 +273,8 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
             ls.optimizer.period_range = (0.04, 0.085)
             period = ls.best_period
 
-
+#W = df['parname'] == 'WIDTH0'
+#df.loc[W,'value']
     if phased:
         assert period is not None
         assert t0 is not None
@@ -283,10 +287,12 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
 
     for fp in fitpars:
         w = df['parname'] == fp
+#        wp = filter(lambda x: x.startswith('SHIFT'),w)
+#        print(wp)
         vals = df.loc[w, 'value'].values
         errs = df.loc[w, 'err'].values
-# adjust this section for each shift0 shift1 and amplitude. SHIFT0 only
         if any(filter(lambda x: x.startswith('SHIFT'),fitpars)):
+#            df.loc[wp, 'value'].values
             plt.errorbar(x,
                 (vals-fit_pars[line]['center'])/fit_pars[line]['center']*c,
                 errs/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
