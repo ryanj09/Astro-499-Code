@@ -120,6 +120,35 @@ fit_pars = {
             'side':'red','xmin':6450,'xmax':6625,'exclude':[6520,6590]}
     }
 
+def fit_three_gauss(sp,line=6562, i=0):
+
+    fitfunc = 'threegauss'
+    fname = make_fname(line=line, fitfunc=fitfunc, i=i)
+    sp.plotter(xmin=fit_pars[line]['xmin'],xmax=fit_pars[line]['xmax'],
+        errstyle='fill')
+    sp.baseline(xmin=fit_pars[line]['xmin'], xmax=fit_pars[line]['xmax'],
+            exclude=fit_pars[line]['exclude'],
+            subtract=False, reset_selection=False,
+            highlight_fitregion=True, order=2)
+    T,F = True,False
+    # this should be done automatically in pyspectkit fitters.py: it's a bug
+    # TODO: read in the one Gauss component and use for guess/limits
+    sp.specfit(fittype='gaussian', 
+        guesses=[1e-16,line,3.5,5e-17,line,10,7e-17,line,9],
+        limits=[(0,0), (line-25,line+25), (1.5,7), 
+                (0,0), (line-25,line+25), (4,20),
+                (0,0), (line-25,line+25), (4,20)],
+        limited=[(T,F), (T,T), (T,T), 
+                 (T,F), (T,T), (T,T),
+                 (T,F), (T,T), (T,T)], renormalize=True, debug = True, verbose = True, use_lmfit = True)
+    sp.specfit.plot_components(add_baseline=True)
+    sp.plotter.savefig(fname+'.png')
+    fitstr = sp.specfit.parinfo.__repr__()
+    fitstr = fitstr[1:-1]
+    with open(fname+'.par','w') as f:
+        f.write(fitstr)
+    plt.close()
+
 def fit_two_gauss(sp,line=6562, i=0):
 
     fitfunc = 'twogauss'
@@ -190,11 +219,13 @@ def fit_gauss(sp,line=6562, i=0):
 
 def loop_fit(pars, fitfunc='gauss', line=6562):
     for i, sp in enumerate(pars[fit_pars[line]['side']]['sp']):
-        assert(fitfunc in ['gauss', 'twogauss'])
+        assert(fitfunc in ['gauss', 'twogauss', 'threegauss'])
         if fitfunc == 'gauss':
             fit_gauss(sp,line=line, i = i)
         elif fitfunc == 'twogauss':
             fit_two_gauss(sp,line=line, i = i)
+        elif fitfunc == 'threegauss':
+            fit_three_gauss(sp,line=line, i = i)
     
 
 def read_parfile(line=6562, fitfunc = 'gauss', i=0):
