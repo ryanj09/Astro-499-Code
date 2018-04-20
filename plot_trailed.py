@@ -8,6 +8,7 @@ from scipy.interpolate import interp1d
 from astropy.time import Time
 import pyspeckit as psk
 import seaborn as sb
+import warnings
 
 from rv_utils import label_lines
 import seaborn as sb
@@ -134,10 +135,10 @@ def fit_two_gauss(sp,line=6562, i=0):
     # TODO: read in the one Gauss component and use for guess/limits
     sp.specfit(fittype='gaussian', 
         guesses=[1e-16,line,3.5,5e-17,line,10],
-        limits=[(2.5E-17,0), (line-25,line+25), (1.5,7), 
-                (2.5E-17,0), (line-25,line+25), (4,20)],
-        limited=[(T,F), (F,F), (F,F), 
-                 (F,F), (F,F), (F,F)], renormalize=False, debug = True, verbose = True)
+        limits=[(0,0), (line-25,line+25), (1.5,7), 
+                (0,0), (line-25,line+25), (4,20)],
+        limited=[(T,F), (T,T), (T,T), 
+                 (T,F), (T,T), (T,T)], renormalize=True, debug = True, verbose = True, use_lmfit = True)
     sp.specfit.plot_components(add_baseline=True)
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
