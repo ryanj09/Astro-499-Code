@@ -319,23 +319,28 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
 
     for fp in fitpars:
         w = df['parname'] == fp
-#        wp = filter(lambda x: x.startswith('SHIFT'),w)
-#        print(wp)
         vals = df.loc[w, 'value'].values
         errs = df.loc[w, 'err'].values
+#        print(w)
+#        print(vals)
+#        print(errs) what i need to do, is manipulate below to make each plot seperate for amp and shift
         if any(filter(lambda x: x.startswith('SHIFT'),fitpars)):
-#            df.loc[wp, 'value'].values
+#            plt.plot(vals,errs)
+#            plt.plot(vals,errs)
             plt.errorbar(x,
                 (vals-fit_pars[line]['center'])/fit_pars[line]['center']*c,
                 errs/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
+            plt.ylim(ymin = -700,ymax = 700)
             plt.xlabel(xtit)
             plt.ylabel('Velocity (km/s)')
         elif any(filter(lambda x: x.startswith('AMPLITUDE'),fitpars)):
             plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
+            plt.ylim(ymin = -2e-16,ymax = 2e-16)
             plt.xlabel(xtit)
             plt.ylabel('erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$')
         elif any(filter(lambda x: x.startswith('WIDTH'),fitpars)):
             plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
+            plt.ylim(ymin = -20,ymax = 20)
             plt.xlabel(xtit)
             plt.ylabel('Angstroms')
 #Need to change the shitf0 to include all shifts and amps.
