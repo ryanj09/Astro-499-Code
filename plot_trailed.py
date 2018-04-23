@@ -267,7 +267,7 @@ def get_fit_pars(pars, fitpar='SHIFT0', line=6562):
         errs.append(sp.specfit.parinfo[fitpar].error)
     
     return np.array(vals), np.array(errs)
-#Student, Ryan Jackim, edit: function to plot the data to make sure the data was being read in correctly.
+#Student, Ryan Jackim, edit: function to plot the data to make sure the data was being read in correctly. Delete at any time.
 #def plot_parst(pars,df,fitpars=['WIDTH0']):
 
 #    for fp in fitpars:
@@ -305,8 +305,6 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
             ls.optimizer.period_range = (0.04, 0.085)
             period = ls.best_period
 
-#W = df['parname'] == 'WIDTH0'
-#df.loc[W,'value']
     if phased:
         assert period is not None
         assert t0 is not None
@@ -321,30 +319,24 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
         w = df['parname'] == fp
         vals = df.loc[w, 'value'].values
         errs = df.loc[w, 'err'].values
-#        print(w)
-#        print(vals)
 #        print(errs) what i need to do, is manipulate below to make each plot seperate for amp and shift
-        if any(filter(lambda x: x.startswith('SHIFT'),fitpars)):
-#            plt.plot(vals,errs)
-#            plt.plot(vals,errs)
+        if fp.startswith('SHIFT'):
             plt.errorbar(x,
                 (vals-fit_pars[line]['center'])/fit_pars[line]['center']*c,
                 errs/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
             plt.ylim(ymin = -700,ymax = 700)
             plt.xlabel(xtit)
             plt.ylabel('Velocity (km/s)')
-        elif any(filter(lambda x: x.startswith('AMPLITUDE'),fitpars)):
+        elif fp.startswith('AMPLITUDE'):
             plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
             plt.ylim(ymin = -2e-16,ymax = 2e-16)
             plt.xlabel(xtit)
             plt.ylabel('erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$')
-        elif any(filter(lambda x: x.startswith('WIDTH'),fitpars)):
+        elif fp.startswith('WIDTH'):
             plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
             plt.ylim(ymin = -20,ymax = 20)
             plt.xlabel(xtit)
             plt.ylabel('Angstroms')
-#Need to change the shitf0 to include all shifts and amps.
-
 
     sb.despine()
     
