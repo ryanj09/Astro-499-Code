@@ -319,11 +319,14 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
         w = df['parname'] == fp
         vals = df.loc[w, 'value'].values
         errs = df.loc[w, 'err'].values
+        mask = np.where(errs < 10)
+        print(vals[mask])
+        print(errs[mask])
 #        print(errs) what i need to do, is manipulate below to make each plot seperate for amp and shift
         if fp.startswith('SHIFT'):
-            plt.errorbar(x,
-                (vals-fit_pars[line]['center'])/fit_pars[line]['center']*c,
-                errs/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
+            plt.errorbar(x, 
+                (vals[mask]-fit_pars[line]['center'])/fit_pars[line]['center']*c,
+                errs[mask]/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
             plt.ylim(ymin = -700,ymax = 700)
             plt.xlabel(xtit)
             plt.ylabel('Velocity (km/s)')
