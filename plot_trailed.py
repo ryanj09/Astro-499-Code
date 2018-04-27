@@ -134,9 +134,9 @@ def fit_three_gauss(sp,line=6562, i=0):
     # this should be done automatically in pyspectkit fitters.py: it's a bug
     # TODO: read in the one Gauss component and use for guess/limits
     sp.specfit(fittype='gaussian', 
-        guesses=[1e-16,line,3.5,5e-17,line,10,7e-17,line,9],
+        guesses=[1e-16,line,3.5,1e-16,line,3.5,5e-17,line,10],
         limits=[(0,0), (line-25,line+25), (1.5,7), 
-                (0,0), (line-25,line+25), (4,20),
+                (0,0), (line-25,line+25), (1.5,7),
                 (0,0), (line-25,line+25), (4,20)],
         limited=[(T,F), (T,T), (T,T), 
                  (T,F), (T,T), (T,T),
@@ -184,10 +184,17 @@ def fit_two_gauss(sp,line=6562, i=0):
 #        fitpars[par] = {'value':vals[i], 'err':errs[i]}
 #
 #    return fitpars
+def get_fit_value(df, parname):
+    return df.loc[df.parname == parname, "value"].values[0]
 
 def fit_gauss(sp,line=6562, i=0):
 
     fitfunc = 'gauss'
+    try:
+        dfi = read_parfile(line=line, fitfunc = fitfunc, i=i)
+        guesses = [get_fit_value(dfi,'AMPLITUDE0'), get_fit_value(dfi, 'SHIFT0'), get_fit_value(dfi, 'WIDTH0')]
+    except FileNotFoundError:
+        guesses=[1e-16,line,3.5]
     fname = make_fname(line=line, fitfunc=fitfunc, i=i)
     sp.plotter(xmin=fit_pars[line]['xmin'],xmax=fit_pars[line]['xmax'],
         errstyle='fill')
@@ -197,8 +204,8 @@ def fit_gauss(sp,line=6562, i=0):
             highlight_fitregion=True, order=2)
     T,F = True,False
     sp.specfit(fittype='gaussian',
-        guesses=[1e-16,line,3.5],
-        limits=[(0,0), (line-25,line+25), (1.5,10)],
+        guesses=guesses,
+        limits=[(0,0), (line-25,line+25), (1.5,10)],#try to get the ranges from the parfiles for the limits. 
         limited=[(F,F), (T,T), (T,T)], debug = True, verbose = True) 
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
@@ -320,24 +327,21 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
         vals = df.loc[w, 'value'].values
         errs = df.loc[w, 'err'].values
         mask = np.where(errs < 10)
-        print(vals[mask])
-        print(errs[mask])
-#        print(errs) what i need to do, is manipulate below to make each plot seperate for amp and shift
         if fp.startswith('SHIFT'):
-            plt.errorbar(x, 
+            plt.errorbar(x[mask], 
                 (vals[mask]-fit_pars[line]['center'])/fit_pars[line]['center']*c,
                 errs[mask]/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
-            plt.ylim(ymin = -700,ymax = 700)
+#            plt.ylim(ymin = -700,ymax = 700)
             plt.xlabel(xtit)
             plt.ylabel('Velocity (km/s)')
         elif fp.startswith('AMPLITUDE'):
-            plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
-            plt.ylim(ymin = -2e-16,ymax = 2e-16)
+            plt.errorbar(x[mask], vals[mask], errs[mask], fmt='.', label=fp, linestyle='none')
+#            plt.ylim(ymin = -2e-16,ymax = 2e-16)
             plt.xlabel(xtit)
             plt.ylabel('erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$')
         elif fp.startswith('WIDTH'):
-            plt.errorbar(x, vals, errs, fmt='.', label=fp, linestyle='none')
-            plt.ylim(ymin = -20,ymax = 20)
+            plt.errorbar(x[mask], vals[mask], errs[mask], fmt='.', label=fp, linestyle='none')
+#            plt.ylim(ymin = -20,ymax = 20)
             plt.xlabel(xtit)
             plt.ylabel('Angstroms')
 
