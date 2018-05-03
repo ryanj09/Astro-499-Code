@@ -123,6 +123,18 @@ fit_pars = {
 def get_fit_value(df, parname):
     return df.loc[df.parname == parname, "value"].values[0]
 
+def get_fit_limits(df, parname):
+    w = df.parname == parname
+    Rangelow = df.loc[w,'Rangelow'].values[0]
+    Rangehigh = df.loc[w,'Rangehigh'].values[0]
+    islowlimit = np.isfinite(Rangelow)
+    ishighlimit = np.isfinite(Rangehigh)
+    if not islowlimit:
+        Rangelow = 0
+    if not ishighlimit:
+        Rangehigh = 0
+    return (Rangelow,Rangehigh),(islowlimit,ishighlimit)
+
 def fit_three_gauss(sp,line=6562, i=0):
 
     fitfunc = 'threegauss'
@@ -207,8 +219,16 @@ def fit_gauss(sp,line=6562, i=0):
     try:
         dfi = read_parfile(line=line, fitfunc = fitfunc, i=i)
         guesses = [get_fit_value(dfi,'AMPLITUDE0'), get_fit_value(dfi, 'SHIFT0'), get_fit_value(dfi, 'WIDTH0')]
+        limits = []
+        limited = []
+        for parname in ['AMPLITUDE0', 'SHIFT0', 'WIDTH0']:
+            limitsi, limitedi = get_fit_limits(dfi, parname)
+            limits.append(limitsi)
+            limited.append(limitedi)
     except FileNotFoundError:
         guesses=[1e-16,line,3.5]
+        limits = [(0,0), (line-25,line+25), (1.5,10)]
+        limited = [(F,F), (T,T), (T,T)]
     fname = make_fname(line=line, fitfunc=fitfunc, i=i)
     sp.plotter(xmin=fit_pars[line]['xmin'],xmax=fit_pars[line]['xmax'],
         errstyle='fill')
@@ -219,8 +239,8 @@ def fit_gauss(sp,line=6562, i=0):
     T,F = True,False
     sp.specfit(fittype='gaussian',
         guesses=guesses,
-        limits=[(0,0), (line-25,line+25), (1.5,10)],#try to get the ranges from the parfiles for the limits. 
-        limited=[(F,F), (T,T), (T,T)], debug = True, verbose = True) 
+        limits=limits,
+        limited=limited, debug = True, verbose = True) 
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
     fitstr = fitstr[1:-1]
@@ -257,14 +277,31 @@ def read_parfile(line=6562, fitfunc = 'gauss', i=0):
         df = pd.DataFrame()
         for par in pars:
             tok = par.split()
-            dfi = pd.DataFrame({'spectrum':int(i),
-                'parname':tok[2],'value':float(tok[4]),'err':float(tok[6])},
+            tik = []
+            for toki in tok:
+                tik.extend([t for t in toki.split(':') if len(t)])
+            print(tik)
+            pardic = {'spectrum':int(i),
+                'parname':tok[2],'value':float(tok[4]),'err':float(tok[6])}
+            if len(tik) == 9:
+                Rangestr = tik[8][1:-1]
+                Range = [float(r) for r in Rangestr.split(',')]
+                pardic["Rangelow"] = Range[0]
+                pardic["Rangehigh"] = Range[1]
+            dfi = pd.DataFrame(pardic,
                 index=[0])
             df = df.append(dfi,ignore_index=True)
+
 #Rough start to try to get the limits read in. 
+#        toko = []
 #        for par in pars:
-#            toko = par.split()
-#            print(toko)
+#            toko.append(par.split())
+#        print(toko)
+        # for par in pars:
+            # print(type(par))
+            # toko = par.split()
+            # print(toko[1])
+            # print(toko)
 #            dfj = pd.DataFrame({'Range':toko[7]},
 #                index=[0])
 #            df = df.append(dfj,ignore_index=True)
