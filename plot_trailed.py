@@ -120,9 +120,19 @@ fit_pars = {
             'side':'red','xmin':6450,'xmax':6625,'exclude':[6520,6590]}
     }
 
+def get_fit_value(df, parname):
+    return df.loc[df.parname == parname, "value"].values[0]
+
 def fit_three_gauss(sp,line=6562, i=0):
 
     fitfunc = 'threegauss'
+    try:
+        dfi = read_parfile(line=line, fitfunc = fitfunc, i=i)
+        guesses = [get_fit_value(dfi, 'AMPLITUDE0'), get_fit_value(dfi, 'SHIFT0'), get_fit_value(dfi, 'WIDTH0'),
+                get_fit_value(dfi, 'AMPLITUDE1'), get_fit_value(dfi, 'SHIFT1'), get_fit_value(dfi, 'WIDTH1'),
+                get_fit_value(dfi, 'AMPLITUDE2'), get_fit_value(dfi, 'SHIFT2'), get_fit_value(dfi, 'WIDTH2')]
+    except FileNotFoundError:
+        guesses=[1e-16,line,3.5,1e-16,line,3.5,5e-17,line,10]
     fname = make_fname(line=line, fitfunc=fitfunc, i=i)
     sp.plotter(xmin=fit_pars[line]['xmin'],xmax=fit_pars[line]['xmax'],
         errstyle='fill')
@@ -134,7 +144,7 @@ def fit_three_gauss(sp,line=6562, i=0):
     # this should be done automatically in pyspectkit fitters.py: it's a bug
     # TODO: read in the one Gauss component and use for guess/limits
     sp.specfit(fittype='gaussian', 
-        guesses=[1e-16,line,3.5,1e-16,line,3.5,5e-17,line,10],
+        guesses=guesses,
         limits=[(0,0), (line-25,line+25), (1.5,7), 
                 (0,0), (line-25,line+25), (1.5,7),
                 (0,0), (line-25,line+25), (4,20)],
@@ -152,6 +162,12 @@ def fit_three_gauss(sp,line=6562, i=0):
 def fit_two_gauss(sp,line=6562, i=0):
 
     fitfunc = 'twogauss'
+    try:
+        dfi = read_parfile(line=line, fitfunc = fitfunc, i=i)
+        guesses = [get_fit_value(dfi, 'AMPLITUDE0'), get_fit_value(dfi, 'SHIFT0'), get_fit_value(dfi, 'WIDTH0'),
+                get_fit_value(dfi, 'AMPLITUDE1'), get_fit_value(dfi, 'SHIFT1'), get_fit_value(dfi, 'WIDTH1')]
+    except FileNotFoundError:
+        guesses=[1e-16,line,3.5,5e-17,line,10]
     fname = make_fname(line=line, fitfunc=fitfunc, i=i)
     sp.plotter(xmin=fit_pars[line]['xmin'],xmax=fit_pars[line]['xmax'],
         errstyle='fill')
@@ -163,7 +179,7 @@ def fit_two_gauss(sp,line=6562, i=0):
     # this should be done automatically in pyspectkit fitters.py: it's a bug
     # TODO: read in the one Gauss component and use for guess/limits
     sp.specfit(fittype='gaussian', 
-        guesses=[1e-16,line,3.5,5e-17,line,10],
+        guesses=guesses,
         limits=[(0,0), (line-25,line+25), (1.5,7), 
                 (0,0), (line-25,line+25), (4,20)],
         limited=[(T,F), (T,T), (T,T), 
@@ -184,8 +200,6 @@ def fit_two_gauss(sp,line=6562, i=0):
 #        fitpars[par] = {'value':vals[i], 'err':errs[i]}
 #
 #    return fitpars
-def get_fit_value(df, parname):
-    return df.loc[df.parname == parname, "value"].values[0]
 
 def fit_gauss(sp,line=6562, i=0):
 
@@ -247,8 +261,16 @@ def read_parfile(line=6562, fitfunc = 'gauss', i=0):
                 'parname':tok[2],'value':float(tok[4]),'err':float(tok[6])},
                 index=[0])
             df = df.append(dfi,ignore_index=True)
+#Rough start to try to get the limits read in. 
+#        for par in pars:
+#            toko = par.split()
+#            print(toko)
+#            dfj = pd.DataFrame({'Range':toko[7]},
+#                index=[0])
+#            df = df.append(dfj,ignore_index=True)
 
     return df
+
 
 def read_fits(line=6562, fitfunc='gauss'):
     
