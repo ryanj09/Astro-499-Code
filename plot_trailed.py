@@ -116,8 +116,12 @@ def build_pyspeckit(pars):
 
 
 fit_pars = {
-    6562: {'center':6562.8,
-            'side':'red','xmin':6450,'xmax':6625,'exclude':[6520,6590]}
+#    6562: {'center':6562.8,
+ #           'side':'red','xmin':6450,'xmax':6625,'exclude':[6520,6590]},
+#    6680: {'center':6678, 
+#            'side':'red','xmin':6650,'xmax':6700,'exclude':[6654]}
+    4861: {'center':4861.4,
+            'side':'blue','xmin':4830,'xmax':4890,'exclude':[4840,4887]}
     }
 
 def get_fit_value(df, parname):
@@ -125,15 +129,15 @@ def get_fit_value(df, parname):
 
 def get_fit_limits(df, parname):
     w = df.parname == parname
-    Rangelow = df.loc[w,'Rangelow'].values[0]
-    Rangehigh = df.loc[w,'Rangehigh'].values[0]
-    islowlimit = np.isfinite(Rangelow)
-    ishighlimit = np.isfinite(Rangehigh)
+    rangelow = df.loc[w,'rangelow'].values[0]
+    rangehigh = df.loc[w,'rangehigh'].values[0]
+    islowlimit = np.isfinite(rangelow)
+    ishighlimit = np.isfinite(rangehigh)
     if not islowlimit:
-        Rangelow = 0
+        rangelow = 0
     if not ishighlimit:
-        Rangehigh = 0
-    return (Rangelow,Rangehigh),(islowlimit,ishighlimit)
+        rangehigh = 0
+    return (rangelow,rangehigh),(islowlimit,ishighlimit)
 
 def fit_three_gauss(sp,line=6562, i=0):
 
@@ -143,8 +147,24 @@ def fit_three_gauss(sp,line=6562, i=0):
         guesses = [get_fit_value(dfi, 'AMPLITUDE0'), get_fit_value(dfi, 'SHIFT0'), get_fit_value(dfi, 'WIDTH0'),
                 get_fit_value(dfi, 'AMPLITUDE1'), get_fit_value(dfi, 'SHIFT1'), get_fit_value(dfi, 'WIDTH1'),
                 get_fit_value(dfi, 'AMPLITUDE2'), get_fit_value(dfi, 'SHIFT2'), get_fit_value(dfi, 'WIDTH2')]
+        limits = []
+        limited = []
+        for parname in ['AMPLITUDE0', 'SHIFT0', 'WIDTH0', 
+                        'AMPLITUDE1', 'SHIFT1', 'WIDTH1',
+                        'AMPLITUDE2', 'SHIFT2', 'WIDTH2']:
+            limitsi, limitedi = get_fit_limits(dfi, parname)
+            limits.append(limitsi)
+            limited.append(limitedi)
     except FileNotFoundError:
+        F = False
+        T = True
         guesses=[1e-16,line,3.5,1e-16,line,3.5,5e-17,line,10]
+        limits = [(0,0), (line-25,line+25), (1.5,7), 
+                (0,0), (line-25,line+25), (1.5,7),
+                (0,0), (line-25,line+25), (4,20)]
+        limited = [(T,F), (T,T), (T,T), 
+                 (T,F), (T,T), (T,T),
+                 (T,F), (T,T), (T,T)]
     fname = make_fname(line=line, fitfunc=fitfunc, i=i)
     sp.plotter(xmin=fit_pars[line]['xmin'],xmax=fit_pars[line]['xmax'],
         errstyle='fill')
@@ -157,12 +177,8 @@ def fit_three_gauss(sp,line=6562, i=0):
     # TODO: read in the one Gauss component and use for guess/limits
     sp.specfit(fittype='gaussian', 
         guesses=guesses,
-        limits=[(0,0), (line-25,line+25), (1.5,7), 
-                (0,0), (line-25,line+25), (1.5,7),
-                (0,0), (line-25,line+25), (4,20)],
-        limited=[(T,F), (T,T), (T,T), 
-                 (T,F), (T,T), (T,T),
-                 (T,F), (T,T), (T,T)], renormalize=True, debug = True, verbose = True, use_lmfit = True)
+        limits=limits,
+        limited=limited, renormalize=True, debug = True, verbose = True, use_lmfit = True)
     sp.specfit.plot_components(add_baseline=True)
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
@@ -178,8 +194,21 @@ def fit_two_gauss(sp,line=6562, i=0):
         dfi = read_parfile(line=line, fitfunc = fitfunc, i=i)
         guesses = [get_fit_value(dfi, 'AMPLITUDE0'), get_fit_value(dfi, 'SHIFT0'), get_fit_value(dfi, 'WIDTH0'),
                 get_fit_value(dfi, 'AMPLITUDE1'), get_fit_value(dfi, 'SHIFT1'), get_fit_value(dfi, 'WIDTH1')]
+        limits = []
+        limited = []
+        for parname in ['AMPLITUDE0', 'SHIFT0', 'WIDTH0', 
+                        'AMPLITUDE1', 'SHIFT1', 'WIDTH1']:
+            limitsi, limitedi = get_fit_limits(dfi, parname)
+            limits.append(limitsi)
+            limited.append(limitedi)
     except FileNotFoundError:
-        guesses=[1e-16,line,3.5,5e-17,line,10]
+        F = False
+        T = True
+        guesses = [1e-16,line,3.5,5e-17,line,10]
+        limits = [(0,0), (line-25,line+25), (1.5,7), 
+                (0,0), (line-25,line+25), (4,20)]
+        limited = [(T,F), (T,T), (T,T), 
+                 (T,F), (T,T), (T,T)]
     fname = make_fname(line=line, fitfunc=fitfunc, i=i)
     sp.plotter(xmin=fit_pars[line]['xmin'],xmax=fit_pars[line]['xmax'],
         errstyle='fill')
@@ -192,10 +221,8 @@ def fit_two_gauss(sp,line=6562, i=0):
     # TODO: read in the one Gauss component and use for guess/limits
     sp.specfit(fittype='gaussian', 
         guesses=guesses,
-        limits=[(0,0), (line-25,line+25), (1.5,7), 
-                (0,0), (line-25,line+25), (4,20)],
-        limited=[(T,F), (T,T), (T,T), 
-                 (T,F), (T,T), (T,T)], renormalize=True, debug = True, verbose = True, use_lmfit = True)
+        limits=limits,
+        limited=limited, renormalize=True, debug = True, verbose = True, use_lmfit = True)
     sp.specfit.plot_components(add_baseline=True)
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
@@ -226,6 +253,8 @@ def fit_gauss(sp,line=6562, i=0):
             limits.append(limitsi)
             limited.append(limitedi)
     except FileNotFoundError:
+        F = False
+        T = True
         guesses=[1e-16,line,3.5]
         limits = [(0,0), (line-25,line+25), (1.5,10)]
         limited = [(F,F), (T,T), (T,T)]
@@ -256,7 +285,15 @@ def fit_gauss(sp,line=6562, i=0):
 #
 #    return fitpars
         
-
+def fit_single(pars,i, fitfunc='gauss', line=6562):
+    sp = pars[fit_pars[line]['side']]['sp'][i]
+    assert(fitfunc in ['gauss', 'twogauss', 'threegauss'])
+    if fitfunc == 'gauss':
+        fit_gauss(sp,line=line, i = i)
+    elif fitfunc == 'twogauss':
+        fit_two_gauss(sp,line=line, i = i)
+    elif fitfunc == 'threegauss':
+        fit_three_gauss(sp,line=line, i = i)
 
 def loop_fit(pars, fitfunc='gauss', line=6562):
     for i, sp in enumerate(pars[fit_pars[line]['side']]['sp']):
@@ -284,27 +321,13 @@ def read_parfile(line=6562, fitfunc = 'gauss', i=0):
             pardic = {'spectrum':int(i),
                 'parname':tok[2],'value':float(tok[4]),'err':float(tok[6])}
             if len(tik) == 9:
-                Rangestr = tik[8][1:-1]
-                Range = [float(r) for r in Rangestr.split(',')]
-                pardic["Rangelow"] = Range[0]
-                pardic["Rangehigh"] = Range[1]
+                rangestr = tik[8][1:-1]
+                rangel = [float(r) for r in rangestr.split(',')]
+                pardic["rangelow"] = rangel[0]
+                pardic["rangehigh"] = rangel[1]
             dfi = pd.DataFrame(pardic,
                 index=[0])
             df = df.append(dfi,ignore_index=True)
-
-#Rough start to try to get the limits read in. 
-#        toko = []
-#        for par in pars:
-#            toko.append(par.split())
-#        print(toko)
-        # for par in pars:
-            # print(type(par))
-            # toko = par.split()
-            # print(toko[1])
-            # print(toko)
-#            dfj = pd.DataFrame({'Range':toko[7]},
-#                index=[0])
-#            df = df.append(dfj,ignore_index=True)
 
     return df
 
@@ -351,7 +374,7 @@ t0 = 57695.256711278445
 period=0.06633813731
 def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     period = period, t0 = t0, phased=False, fit_period=False):
-
+#save figures to fig
     c = 2.99792458E5 #km/s
 
     side = fit_pars[line]['side']
