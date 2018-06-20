@@ -117,11 +117,17 @@ def build_pyspeckit(pars):
 
 fit_pars = {
 #    6562: {'center':6562.8,
- #           'side':'red','xmin':6450,'xmax':6625,'exclude':[6520,6590]},
-#    6680: {'center':6678, 
-#            'side':'red','xmin':6650,'xmax':6700,'exclude':[6654]}
-    4861: {'center':4861.4,
-            'side':'blue','xmin':4830,'xmax':4890,'exclude':[4840,4887]}
+#            'side':'red','xmin':6450,'xmax':6625,'exclude':[6520,6590]}
+    6680: {'center':6678, 
+            'side':'red','xmin':6650,'xmax':6700,'exclude':[6654]}
+#    4861: {'center':4861.4,
+#            'side':'blue','xmin':4800,'xmax':4900,'exclude':[4840,4887]}
+#    4670: {'center':4686,
+#            'side':'blue','xmin':4550,'xmax':4800,'exclude':[4735]}
+#    4686: {'center':4686,
+#            'side':'blue','xmin':4665,'xmax':4740,'exclude':[4735]}
+
+
     }
 
 def get_fit_value(df, parname):
@@ -347,6 +353,9 @@ def read_fits(line=6562, fitfunc='gauss'):
 def make_fname(line=6562, fitfunc = 'gauss', i=0):
     return "fig/{:4d}/PTFS1623al_{:4d}_{}_{:03d}".format(line,line,fitfunc,i)
 
+def make_fname_pars(line=6562, fitpars = ['SHIFT0']):
+    return "fig/{:4d}/PTFS1623al_{:4d}_{}".format(line,line,fitpars)
+
 def get_fit_pars(pars, fitpar='SHIFT0', line=6562):
     raise ValueError('Deprecated: only works if fit was performed this session.  Use read_fits instead')
     vals = []
@@ -356,21 +365,9 @@ def get_fit_pars(pars, fitpar='SHIFT0', line=6562):
         errs.append(sp.specfit.parinfo[fitpar].error)
     
     return np.array(vals), np.array(errs)
-#Student, Ryan Jackim, edit: function to plot the data to make sure the data was being read in correctly. Delete at any time.
-#def plot_parst(pars,df,fitpars=['WIDTH0']):
 
-#    for fp in fitpars:
-#        w = None
-#        vals = None
-#        errs = None
-#        w = df['parname'] == fp
-#        wp = filter(lambda x: x.startswith('SHIFT'),fitpars)
-#        wp
-#        vals = df.loc[w, 'value'].values
-#        errs = df.loc[w, 'err'].values
-#    plt.plot(vals,errs)
-# rough TASC t0.  accretion disk is at compact object
 t0 = 57695.256711278445
+
 period=0.06633813731
 def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     period = period, t0 = t0, phased=False, fit_period=False):
@@ -378,9 +375,10 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     c = 2.99792458E5 #km/s
 
     side = fit_pars[line]['side']
-
+    fname = make_fname_pars(line=line, fitpars=fitpars)
     start = np.array(pars[side]['start_time']) 
     end = np.array(pars[side]['end_time']) 
+
     t = start + (end-start)/2.
 
     if fit_period:
@@ -426,7 +424,7 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
 #            plt.ylim(ymin = -20,ymax = 20)
             plt.xlabel(xtit)
             plt.ylabel('Angstroms')
-
+    plt.savefig(fname+ '.png')
     sb.despine()
     
             
