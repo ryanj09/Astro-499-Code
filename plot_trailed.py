@@ -116,17 +116,14 @@ def build_pyspeckit(pars):
 
 
 fit_pars = {
-#    6562: {'center':6562.8,
-#            'side':'red','xmin':6450,'xmax':6625,'exclude':[6520,6590]}
-    6680: {'center':6678, 
-            'side':'red','xmin':6650,'xmax':6700,'exclude':[6654]}
-#    4861: {'center':4861.4,
-#            'side':'blue','xmin':4800,'xmax':4900,'exclude':[4840,4887]}
-#    4670: {'center':4686,
-#            'side':'blue','xmin':4550,'xmax':4800,'exclude':[4735]}
-#    4686: {'center':4686,
-#            'side':'blue','xmin':4665,'xmax':4740,'exclude':[4735]}
-
+    6562: {'center':6562.8,
+            'side':'red','xmin':6450,'xmax':6625,'exclude':[6520,6590]},
+#    6680: {'center':6678, 
+#            'side':'red','xmin':6650,'xmax':6700,'exclude':[6654]}
+    4861: {'center':4861.4,
+            'side':'blue','xmin':4750,'xmax':4900,'exclude':[4825,4887]},
+    4670: {'center':4686,
+            'side':'blue','xmin':4550,'xmax':4800,'exclude':[4600,4750]}
 
     }
 
@@ -177,7 +174,7 @@ def fit_three_gauss(sp,line=6562, i=0):
     sp.baseline(xmin=fit_pars[line]['xmin'], xmax=fit_pars[line]['xmax'],
             exclude=fit_pars[line]['exclude'],
             subtract=False, reset_selection=False,
-            highlight_fitregion=True, order=2)
+            highlight_fitregion=True, order=1)
     T,F = True,False
     # this should be done automatically in pyspectkit fitters.py: it's a bug
     # TODO: read in the one Gauss component and use for guess/limits
@@ -221,7 +218,7 @@ def fit_two_gauss(sp,line=6562, i=0):
     sp.baseline(xmin=fit_pars[line]['xmin'], xmax=fit_pars[line]['xmax'],
             exclude=fit_pars[line]['exclude'],
             subtract=False, reset_selection=False,
-            highlight_fitregion=True, order=2)
+            highlight_fitregion=True, order=1)
     T,F = True,False
     # this should be done automatically in pyspectkit fitters.py: it's a bug
     # TODO: read in the one Gauss component and use for guess/limits
@@ -270,7 +267,7 @@ def fit_gauss(sp,line=6562, i=0):
     sp.baseline(xmin=fit_pars[line]['xmin'], xmax=fit_pars[line]['xmax'],
             exclude=fit_pars[line]['exclude'],
             subtract=False, reset_selection=False,
-            highlight_fitregion=True, order=2)
+            highlight_fitregion=True, order=1)
     T,F = True,False
     sp.specfit(fittype='gaussian',
         guesses=guesses,
@@ -323,7 +320,7 @@ def read_parfile(line=6562, fitfunc = 'gauss', i=0):
             tik = []
             for toki in tok:
                 tik.extend([t for t in toki.split(':') if len(t)])
-            print(tik)
+#            print(tik)
             pardic = {'spectrum':int(i),
                 'parname':tok[2],'value':float(tok[4]),'err':float(tok[6])}
             if len(tik) == 9:
@@ -427,7 +424,18 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     plt.savefig(fname+ '.png')
     sb.despine()
     
-            
+
+def fit_display(line = 6562, fitfuncs = ['gauss','twogauss','threegauss']):
+    f = open('fig/{:4d}/all_fits.html'.format(line), 'w')
+    f.write('<html><BODY>\n')
+    for i in range(47):
+        f.write('<HR>{}<BR>\n'.format(i))
+        for fitfunc in fitfuncs:
+            image = "PTFS1623al_{:4d}_{}_{:03d}".format(line,fitfunc,i) + '.png'
+            f.write("<IMG SRC = '{}' width = '400'>".format(image))
+    f.write('</BODY></html>')
+    f.close()
+        
 
 def stack_plot(pars,side='red', xrange = None, offset=1e-17):
     plt.figure()
