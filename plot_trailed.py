@@ -118,12 +118,18 @@ def build_pyspeckit(pars):
 fit_pars = {
     6562: {'center':6562.8,
             'side':'red','xmin':6450,'xmax':6625,'exclude':[6520,6590]},
-#    6680: {'center':6678, 
-#            'side':'red','xmin':6650,'xmax':6700,'exclude':[6654]}
+    6680: {'center':6678, 
+            'side':'red','xmin':6615,'xmax':6750,'exclude':[6650,6700]},
     4861: {'center':4861.4,
             'side':'blue','xmin':4750,'xmax':4900,'exclude':[4825,4887]},
     4670: {'center':4686,
-            'side':'blue','xmin':4550,'xmax':4800,'exclude':[4600,4750]}
+            'side':'blue','xmin':4550,'xmax':4800,'exclude':[4600,4750]},#(the exclude is where you make the fit defined)
+    4340: {'center':4340.47,
+            'side':'blue','xmin':4250,'xmax':4400,'exclude':[4300,4370]},
+    4472: {'center':4472,
+            'side':'blue','xmin':4420,'xmax':4540,'exclude':[4452,4500]},
+    7065: {'center':7065,
+            'side':'red','xmin':7000,'xmax':7150,'exclude':[7040,7090]}
 
     }
 
@@ -307,6 +313,17 @@ def loop_fit(pars, fitfunc='gauss', line=6562):
             fit_two_gauss(sp,line=line, i = i)
         elif fitfunc == 'threegauss':
             fit_three_gauss(sp,line=line, i = i)
+
+def fit_display(line = 6562, fitfuncs = ['gauss','twogauss','threegauss']):
+    f = open('fig/{:4d}/all_fits.html'.format(line), 'w')
+    f.write('<html><BODY>\n')
+    for i in range(47):
+        f.write('<HR>{}<BR>\n'.format(i))
+        for fitfunc in fitfuncs:
+            image = "PTFS1623al_{:4d}_{}_{:03d}".format(line,fitfunc,i) + '.png'
+            f.write("<IMG SRC = '{}' width = '400'>".format(image))
+    f.write('</BODY></html>')
+    f.close()
     
 
 def read_parfile(line=6562, fitfunc = 'gauss', i=0):
@@ -423,19 +440,8 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
             plt.ylabel('Angstroms')
     plt.savefig(fname+ '.png')
     sb.despine()
-    
 
-def fit_display(line = 6562, fitfuncs = ['gauss','twogauss','threegauss']):
-    f = open('fig/{:4d}/all_fits.html'.format(line), 'w')
-    f.write('<html><BODY>\n')
-    for i in range(47):
-        f.write('<HR>{}<BR>\n'.format(i))
-        for fitfunc in fitfuncs:
-            image = "PTFS1623al_{:4d}_{}_{:03d}".format(line,fitfunc,i) + '.png'
-            f.write("<IMG SRC = '{}' width = '400'>".format(image))
-    f.write('</BODY></html>')
-    f.close()
-        
+    
 
 def stack_plot(pars,side='red', xrange = None, offset=1e-17):
     plt.figure()
