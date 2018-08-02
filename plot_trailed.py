@@ -9,6 +9,8 @@ from astropy.time import Time
 import pyspeckit as psk
 import seaborn as sb
 import warnings
+from io import StringIO
+import requests
 
 from rv_utils import label_lines
 import seaborn as sb
@@ -362,6 +364,33 @@ def read_fits(line=6562, fitfunc='gauss'):
 
     return df
 
+def read_remapped_fits(line=6562):
+    r = requests.get('https://docs.google.com/spreadsheets/d/1WmS5gNuWP1G5nbIXfvfDmEIaVOZ2rLlboWwjchIpzMk/export?format=csv')
+    df_map = pd.read_csv(StringIO(r.text))
+    components = ['A','B','C']
+    df = pd.DataFrame()
+    for idx, row in df_map.iterrows():
+        max_index = np.max([row[c] for c in components])
+        if max_index == -1:
+            continue
+        elif max_index == 0:
+            fitfunc = 'gauss'
+        elif max_index == 1:
+            fitfunc = 'twogauss'
+        elif max_index == 2:
+            fitfunc = 'threegauss'
+        else:
+            raise ValueError
+        dfi = read_parfile(line=line, fitfunc=fitfunc, i=row['spectrum_number'])
+        c2i = row[components].to_dict()
+        i2c = {str(v):k for k, v in c2i.items()}
+        for i,c in i2c.items():
+            dfi['parname'] = dfi['parname'].str.replace(i,c, regex = False)
+        df = df.append(dfi,ignore_index=True)
+    return df
+
+#now loop over rows in dfi and rename with i-c
+#think about checking for duplicate assisgments
 
 
 def make_fname(line=6562, fitfunc = 'gauss', i=0):
@@ -389,7 +418,7 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     c = 2.99792458E5 #km/s
 
     side = fit_pars[line]['side']
-    fname = make_fname_pars(line=line, fitpars=fitpars)
+    fname = make_fname_pars(line=line, fitpars='_'.join(fitpars))
     start = np.array(pars[side]['start_time']) 
     end = np.array(pars[side]['end_time']) 
 
@@ -409,15 +438,16 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     if phased:
         assert period is not None
         assert t0 is not None
-        x = ((t-t0) % period) / period
+        x_all = ((t-t0) % period) / period
         xtit = 'Phase'
     else:
         t0 = t[0]
-        x = (t-t0)*24. 
+        x_all = (t-t0)*24. 
         xtit = 'Time (hours)'
-
+        x_all = np.arange(len(x_all))
     for fp in fitpars:
         w = df['parname'] == fp
+        x = x_all[df.loc[w,'spectrum']]
         vals = df.loc[w, 'value'].values
         errs = df.loc[w, 'err'].values
         mask = np.where(errs < 10)
