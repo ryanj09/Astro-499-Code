@@ -364,8 +364,8 @@ def read_fits(line=6562, fitfunc='gauss'):
 
     return df
 
-def read_remapped_fits(line=6562):
-    r = requests.get('https://docs.google.com/spreadsheets/d/1WmS5gNuWP1G5nbIXfvfDmEIaVOZ2rLlboWwjchIpzMk/export?format=csv')
+def read_remapped_fits(sheet='6562', line = 6562):
+    r = requests.get('https://docs.google.com/spreadsheets/d/1WmS5gNuWP1G5nbIXfvfDmEIaVOZ2rLlboWwjchIpzMk/gviz/tq?tqx=out:csv&sheet='+sheet)
     df_map = pd.read_csv(StringIO(r.text))
     components = ['A','B','C']
     df = pd.DataFrame()
