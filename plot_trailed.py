@@ -364,8 +364,8 @@ def read_fits(line=6562, fitfunc='gauss'):
 
     return df
 
-def read_remapped_fits(sheet='6562', line = 6562):
-    r = requests.get('https://docs.google.com/spreadsheets/d/1WmS5gNuWP1G5nbIXfvfDmEIaVOZ2rLlboWwjchIpzMk/gviz/tq?tqx=out:csv&sheet='+sheet)
+def read_remapped_fits(line = 6562):
+    r = requests.get('https://docs.google.com/spreadsheets/d/1WmS5gNuWP1G5nbIXfvfDmEIaVOZ2rLlboWwjchIpzMk/gviz/tq?tqx=out:csv&sheet='+str(line))
     df_map = pd.read_csv(StringIO(r.text))
     components = ['A','B','C']
     df = pd.DataFrame()
@@ -396,8 +396,8 @@ def read_remapped_fits(sheet='6562', line = 6562):
 def make_fname(line=6562, fitfunc = 'gauss', i=0):
     return "fig/{:4d}/PTFS1623al_{:4d}_{}_{:03d}".format(line,line,fitfunc,i)
 
-def make_fname_pars(line=6562, fitpars = ['SHIFT0']):
-    return "fig/{:4d}/PTFS1623al_{:4d}_{}".format(line,line,fitpars)
+def make_fname_pars(line=6562, fitpars = ['SHIFT0'], phase = 0):
+    return "fig/{:4d}/PTFS1623al_{:4d}_{}_phased_{}".format(line,line,fitpars,phase)
 
 def get_fit_pars(pars, fitpar='SHIFT0', line=6562):
     raise ValueError('Deprecated: only works if fit was performed this session.  Use read_fits instead')
@@ -418,7 +418,6 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     c = 2.99792458E5 #km/s
 
     side = fit_pars[line]['side']
-    fname = make_fname_pars(line=line, fitpars='_'.join(fitpars))
     start = np.array(pars[side]['start_time']) 
     end = np.array(pars[side]['end_time']) 
 
@@ -440,11 +439,13 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
         assert t0 is not None
         x_all = ((t-t0) % period) / period
         xtit = 'Phase'
+        fname = make_fname_pars(line=line, fitpars='_'.join(fitpars), phase= period)
     else:
         t0 = t[0]
         x_all = (t-t0)*24. 
         xtit = 'Time (hours)'
         x_all = np.arange(len(x_all))
+        fname = make_fname_pars(line=line, fitpars='_'.join(fitpars))
     for fp in fitpars:
         w = df['parname'] == fp
         x = x_all[df.loc[w,'spectrum']]
@@ -458,16 +459,19 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
 #            plt.ylim(ymin = -700,ymax = 700)
             plt.xlabel(xtit)
             plt.ylabel('Velocity (km/s)')
+            plt.title(fname)
         elif fp.startswith('AMPLITUDE'):
             plt.errorbar(x[mask], vals[mask], errs[mask], fmt='.', label=fp, linestyle='none')
 #            plt.ylim(ymin = -2e-16,ymax = 2e-16)
             plt.xlabel(xtit)
             plt.ylabel('erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$')
+            plt.title(fname)
         elif fp.startswith('WIDTH'):
             plt.errorbar(x[mask], vals[mask], errs[mask], fmt='.', label=fp, linestyle='none')
 #            plt.ylim(ymin = -20,ymax = 20)
             plt.xlabel(xtit)
             plt.ylabel('Angstroms')
+            plt.title(fname)
     plt.savefig(fname+ '.png')
     sb.despine()
 
