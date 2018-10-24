@@ -108,14 +108,15 @@ def build_pyspeckit(pars):
     for side in ['blue','red']:
         pars[side]['sp'] = []
         for i, _ in enumerate(pars[side]['files']):
-            pars[side]['sp'].append(
-                psk.Spectrum(xarr=pars[side]['raw_wavelength'][i],
+            
+            sp = psk.Spectrum(xarr=pars[side]['raw_wavelength'][i],
                     data=pars[side]['raw_data'][i],
                     error=pars[side]['raw_error'][i],
                     header=pars['red']['header'][i],
                     xarrkwargs={'unit':'angstroms'},
-                            unit='erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$'))
-
+                            unit='erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$')
+            sp.specname = ''
+            pars[side]['sp'].append(sp)
 
 fit_pars = {
     6562: {'center':6562.8,
@@ -131,7 +132,11 @@ fit_pars = {
     4472: {'center':4472,
             'side':'blue','xmin':4420,'xmax':4540,'exclude':[4452,4500]},
     7065: {'center':7065,
-            'side':'red','xmin':7000,'xmax':7150,'exclude':[7040,7090]}
+            'side':'red','xmin':7000,'xmax':7150,'exclude':[7040,7090]},
+    8345: {'center':8345,
+            'side':'red','xmin':8335,'xmax':8355,'exclude':[8340,8350]},
+    8400: {'center':8400,
+            'side':'red','xmin':8360,'xmax':8420,'exclude':[8390,8410]}
 
     }
 
@@ -189,7 +194,7 @@ def fit_three_gauss(sp,line=6562, i=0):
     sp.specfit(fittype='gaussian', 
         guesses=guesses,
         limits=limits,
-        limited=limited, renormalize=True, debug = True, verbose = True, use_lmfit = True)
+        limited=limited, renormalize=True, debug = True, verbose = True, use_lmfit = True, annotate = False)
     sp.specfit.plot_components(add_baseline=True)
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
@@ -233,7 +238,7 @@ def fit_two_gauss(sp,line=6562, i=0):
     sp.specfit(fittype='gaussian', 
         guesses=guesses,
         limits=limits,
-        limited=limited, renormalize=True, debug = True, verbose = True, use_lmfit = True)
+        limited=limited, renormalize=True, debug = True, verbose = True, use_lmfit = True, annotate = False)
     sp.specfit.plot_components(add_baseline=True)
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
@@ -264,8 +269,7 @@ def fit_gauss(sp,line=6562, i=0):
             limits.append(limitsi)
             limited.append(limitedi)
     except FileNotFoundError:
-        F = False
-        T = True
+        F,T = False,True
         guesses=[1e-16,line,3.5]
         limits = [(0,0), (line-25,line+25), (1.5,10)]
         limited = [(F,F), (T,T), (T,T)]
@@ -275,12 +279,12 @@ def fit_gauss(sp,line=6562, i=0):
     sp.baseline(xmin=fit_pars[line]['xmin'], xmax=fit_pars[line]['xmax'],
             exclude=fit_pars[line]['exclude'],
             subtract=False, reset_selection=False,
-            highlight_fitregion=True, order=1)
+            highlight_fitregion=True, order=1, annotate = False)
     T,F = True,False
     sp.specfit(fittype='gaussian',
         guesses=guesses,
         limits=limits,
-        limited=limited, debug = True, verbose = True) 
+        limited=limited, debug = True, verbose = True, annotate = False) 
     sp.plotter.savefig(fname+'.png')
     fitstr = sp.specfit.parinfo.__repr__()
     fitstr = fitstr[1:-1]
@@ -294,8 +298,8 @@ def fit_gauss(sp,line=6562, i=0):
 #    for i, par in enumerate(sp.specfit.parinfo.names):
 #        fitpars[par] = {'value':vals[i], 'err':errs[i]}
 #
-#    return fitpars
-        
+#    return fitpars twitch aueg
+
 def fit_single(pars,i, fitfunc='gauss', line=6562):
     sp = pars[fit_pars[line]['side']]['sp'][i]
     assert(fitfunc in ['gauss', 'twogauss', 'threegauss'])
@@ -399,6 +403,9 @@ def make_fname(line=6562, fitfunc = 'gauss', i=0):
 def make_fname_pars(line=6562, fitpars = ['SHIFT0'], phase = 0):
     return "fig/{:4d}/PTFS1623al_{:4d}_{}_phased_{}".format(line,line,fitpars,phase)
 
+def make_fname_trailed(side = 'red', xl= [6415, 8800]):
+    return "fig/PTFS1623al_trailed_{}_xlimit_{}".format(side,xl)
+
 def get_fit_pars(pars, fitpar='SHIFT0', line=6562):
     raise ValueError('Deprecated: only works if fit was performed this session.  Use read_fits instead')
     vals = []
@@ -422,7 +429,7 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     end = np.array(pars[side]['end_time']) 
 
     t = start + (end-start)/2.
-
+    sb.set_context("poster")#,font_scale=2)
     if fit_period:
         from gatspy.periodic import LombScargle
         for fp in fitpars:
@@ -459,21 +466,21 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
 #            plt.ylim(ymin = -700,ymax = 700)
             plt.xlabel(xtit)
             plt.ylabel('Velocity (km/s)')
-            plt.title(fname)
+#            plt.title(line)
         elif fp.startswith('AMPLITUDE'):
             plt.errorbar(x[mask], vals[mask], errs[mask], fmt='.', label=fp, linestyle='none')
 #            plt.ylim(ymin = -2e-16,ymax = 2e-16)
             plt.xlabel(xtit)
             plt.ylabel('erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$')
-            plt.title(fname)
+#            plt.title(line)
         elif fp.startswith('WIDTH'):
             plt.errorbar(x[mask], vals[mask], errs[mask], fmt='.', label=fp, linestyle='none')
 #            plt.ylim(ymin = -20,ymax = 20)
             plt.xlabel(xtit)
             plt.ylabel('Angstroms')
-            plt.title(fname)
-    plt.savefig(fname+ '.png')
+#            plt.title(line)
     sb.despine()
+    plt.savefig(fname+ '.png', bbox_inches = 'tight')
 
     
 
@@ -495,10 +502,11 @@ def stack_plot(pars,side='red', xrange = None, offset=1e-17):
 
 
 
-def plot_trailed(pars,side='red'):
+def plot_trailed(pars,side='red', xr = [6415, 8800], xb = [3500, 5595]):
     plt.figure()
     #norm = c.SymLogNorm(vmin=-0.25E-16,vmax=1.E-16,linthresh=1e-18)
-    #norm = c.LogNorm(vmin=1E-18,vmax=1.E-16)
+    #norm = c.LogNorm(vmin=1E-18,vmax=1.E-16) set the x and y limits for display graphs
+
     norm = c.Normalize(vmin=-0.25E-16,vmax=1.E-16)
 
     T0 = pars[side]['start_time'][0]
@@ -524,11 +532,13 @@ def plot_trailed(pars,side='red'):
     plt.xlabel('Wavelength ($\AA$)')
     plt.ylabel('Elapsed Time (hr)')
     if side =='red':
-        xl = [6415, 8800]
+        xl = xr #[6415, 8800]
     elif side == 'blue':
-        xl = [3500, 5595]
+        xl = xb #[3500, 5595]
+    fname = make_fname_trailed(side,xl)
     plt.xlim(xl)
     plt.ylim([0,ymax])
+    plt.savefig(fname+ '.png', bbox_inches = 'tight')
 
 def plot_trailed_rebinned(pars):
     plt.figure()
@@ -539,7 +549,7 @@ def plot_trailed_rebinned(pars):
     plt.imshow(pars['blue']['median_data'],interpolation='none',cmap='Greys_r')
         #norm=norm)
 
-def plot_summed(pars):
+def plot_summed(pars, xl = [3000,9000]):
     # plot with no correction for RVs
     plt.plot(pars['red']['wavelengths'],pars['red']['data'].sum(axis=0),color='black')
     plt.plot(pars['blue']['wavelengths'],pars['blue']['data'].sum(axis=0),color='black')
@@ -565,13 +575,16 @@ def plot_summed(pars):
     (r'H$\alpha$',(6562.8)),
     )
 
+    fname = "fig/PTFS1623al_summed_xlimit_{}".format(xl)
+
     ax = plt.gca()
     label_lines(lines, ax=ax, label_y = 5.5e-15,
             line_top = 5e-15, line_mid = 4.5e-15, line_bottom = 4e-15)
-    plt.xlim([3000,9000])
+    plt.xlim(xl)
     plt.ylim([1e-16,6e-15])
     plt.xlabel('Wavelength ($\AA$)')
     plt.ylabel('Flux')
-    
+    sb.despine()
+    plt.savefig(fname+ '.png', bbox_inches = 'tight')
     
     
