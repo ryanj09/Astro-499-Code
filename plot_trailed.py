@@ -187,7 +187,7 @@ def fit_three_gauss(sp,line=6562, i=0):
     sp.baseline(xmin=fit_pars[line]['xmin'], xmax=fit_pars[line]['xmax'],
             exclude=fit_pars[line]['exclude'],
             subtract=False, reset_selection=False,
-            highlight_fitregion=True, order=1)
+            highlight_fitregion=True, order=1, annotate = False)
     T,F = True,False
     # this should be done automatically in pyspectkit fitters.py: it's a bug
     # TODO: read in the one Gauss component and use for guess/limits
@@ -231,7 +231,7 @@ def fit_two_gauss(sp,line=6562, i=0):
     sp.baseline(xmin=fit_pars[line]['xmin'], xmax=fit_pars[line]['xmax'],
             exclude=fit_pars[line]['exclude'],
             subtract=False, reset_selection=False,
-            highlight_fitregion=True, order=1)
+            highlight_fitregion=True, order=1, annotate = False)
     T,F = True,False
     # this should be done automatically in pyspectkit fitters.py: it's a bug
     # TODO: read in the one Gauss component and use for guess/limits
@@ -421,7 +421,7 @@ t0 = 57695.256711278445
 period=0.06633813731
 def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
     period = period, t0 = t0, phased=False, fit_period=False):
-#save figures to fig
+
     c = 2.99792458E5 #km/s
 
     side = fit_pars[line]['side']
@@ -460,25 +460,22 @@ def plot_pars(pars, df, fitpars=['SHIFT0','SHIFT1'], line=6562,
         errs = df.loc[w, 'err'].values
         mask = np.where(errs < 10)
         if fp.startswith('SHIFT'):
+            print(max((vals[mask]-fit_pars[line]['center'])/fit_pars[line]['center']*c))
+            print(min((vals[mask]-fit_pars[line]['center'])/fit_pars[line]['center']*c))
             plt.errorbar(x[mask], 
                 (vals[mask]-fit_pars[line]['center'])/fit_pars[line]['center']*c,
                 errs[mask]/fit_pars[line]['center']*c, fmt='.', label=fp, linestyle='none')
-#            plt.ylim(ymin = -700,ymax = 700)
             plt.xlabel(xtit)
             plt.ylabel('Velocity (km/s)')
-#            plt.title(line)
         elif fp.startswith('AMPLITUDE'):
+            print(max(vals[mask]))
             plt.errorbar(x[mask], vals[mask], errs[mask], fmt='.', label=fp, linestyle='none')
-#            plt.ylim(ymin = -2e-16,ymax = 2e-16)
             plt.xlabel(xtit)
             plt.ylabel('erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$')
-#            plt.title(line)
         elif fp.startswith('WIDTH'):
             plt.errorbar(x[mask], vals[mask], errs[mask], fmt='.', label=fp, linestyle='none')
-#            plt.ylim(ymin = -20,ymax = 20)
             plt.xlabel(xtit)
             plt.ylabel('Angstroms')
-#            plt.title(line)
     sb.despine()
     plt.savefig(fname+ '.png', bbox_inches = 'tight')
 
@@ -492,7 +489,6 @@ def stack_plot(pars,side='red', xrange = None, offset=1e-17):
             xrange = [x.min(), x.max()]
         y = pars[side]['raw_data'][i]
         w = (x >= xrange[0]) & (x <= xrange[1])
-        # figure out baseline, roughly
         if xrange is not None:
             ybg = np.percentile(y[w],5)
         else:
@@ -504,8 +500,6 @@ def stack_plot(pars,side='red', xrange = None, offset=1e-17):
 
 def plot_trailed(pars,side='red', xr = [6415, 8800], xb = [3500, 5595]):
     plt.figure()
-    #norm = c.SymLogNorm(vmin=-0.25E-16,vmax=1.E-16,linthresh=1e-18)
-    #norm = c.LogNorm(vmin=1E-18,vmax=1.E-16) set the x and y limits for display graphs
 
     norm = c.Normalize(vmin=-0.25E-16,vmax=1.E-16)
 
@@ -556,7 +550,7 @@ def plot_summed(pars, xl = [3000,9000]):
 
     sb.set_context("talk")#,font_scale=2)
 
-    lines = (
+    possible_lines = (
     (r'H$\epsilon$',(3970.07)),
     (r'H$\delta$',(4101.76)),
     (r'H$\gamma$',(4340.47)),
@@ -574,6 +568,10 @@ def plot_summed(pars, xl = [3000,9000]):
     ('He II',(4686)),
     (r'H$\alpha$',(6562.8)),
     )
+    lines = []
+    for line in possible_lines:
+        if (line[1] > xl[0]) and (line[1] < xl[1]):
+            lines.append(line)
 
     fname = "fig/PTFS1623al_summed_xlimit_{}".format(xl)
 
